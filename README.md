@@ -253,8 +253,11 @@
 - (void)webView:(WKWebView *)webView didReceiveServerRedirectForProvisionalNavigation:(WKNavigation *)navigation {
     
 }
+
 ```
+
 // 根据WebView对于即将跳转的HTTP请求头信息和相关信息来决定是否跳转
+
 ```
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     
@@ -278,9 +281,13 @@
         }
     }
 }
+
 ```
+
 // 根据客户端受到的服务器响应头以及response相关信息来决定是否可以跳转
+
 ```
+
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationResponse:(WKNavigationResponse *)navigationResponse decisionHandler:(void (^)(WKNavigationResponsePolicy))decisionHandler{
     NSURL *url = [navigationResponse.response URL];
     NSString *scheme = navigationResponse.response.URL.absoluteString;
@@ -340,7 +347,10 @@
         }
     }
 }
+
 ```
+
+
 //需要响应身份验证时调用 同样在block中需要传入用户身份凭证
 - (void)webView:(WKWebView *)webView didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler{
     
@@ -365,8 +375,9 @@
  *  @param webView           实现该代理的webview
  *  @param message           警告框中的内容
  *  @param completionHandler 警告框消失调用
- */`
- ``
+ */
+
+```
 - (void)webView:(WKWebView *)webView runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(void))completionHandler {
     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"提示" message:message?:@"" preferredStyle:UIAlertControllerStyleAlert];
     [alertController addAction:([UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
@@ -375,9 +386,12 @@
     [self presentViewController:alertController animated:YES completion:nil];
 }
 ```
+
 // 确认框
 //JavaScript调用confirm方法后回调的方法 confirm是js中的确定框，需要在block中把用户选择的情况传递进去
+
 ```
+
 - (void)webView:(WKWebView *)webView runJavaScriptConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completionHandler{
     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"提示" message:message?:@"" preferredStyle:UIAlertControllerStyleAlert];
     [alertController addAction:([UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
@@ -389,6 +403,7 @@
     [self presentViewController:alertController animated:YES completion:nil];
 }
 ```
+
 // 输入框
 //JavaScript调用prompt方法后回调的方法 prompt是js中的输入框 需要在block中把用户输入的信息传入
 ```
@@ -412,6 +427,8 @@
     return nil;
 }
 ```
+
+
 ```
 #pragma mark KVO的监听代理
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
