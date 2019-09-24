@@ -26,7 +26,7 @@
 @end
 
 @implementation WeakWebViewScriptMessageDelegate
-
+```
 - (instancetype)initWithDelegate:(id<WKScriptMessageHandler>)scriptDelegate {
     self = [super init];
     if (self) {
@@ -34,7 +34,7 @@
     }
     return self;
 }
-
+```
 #pragma mark - WKScriptMessageHandler
 //遵循WKScriptMessageHandler协议，必须实现如下方法，然后把方法向外传递
 //通过接收JS传出消息的name进行捕捉的回调方法
