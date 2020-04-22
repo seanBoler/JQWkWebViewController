@@ -5,8 +5,8 @@
 //  TA_WKWebViewController.m
 //  TA_5youshenghuoApp
 //
-//  Created by 张家旗 on 2019/9/11.
-//  Copyright © 2019 com.tlkj. All rights reserved.
+//  Created by 家旗 on 2019/9/11.
+//  Copyright © 2019 jiaqi All rights reserved.
 //
 
 
