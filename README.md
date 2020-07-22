@@ -1,21 +1,10 @@
-# JQWkWebViewController
 
 
-//
-//  TA_WKWebViewController.m
-//  TA_5youshenghuoApp
-//
-//  Created by 家旗 on 2019/9/11.
-//  Copyright © 2019 jiaqi All rights reserved.
-//
-
-
-#import "TA_WKWebViewController.h"
 
 #pragma mark ---  设置内存问题 --------
-
-
 // WKWebView 内存不释放的问题解决
+
+```
 @interface WeakWebViewScriptMessageDelegate : NSObject<WKScriptMessageHandler>
 
 //WKScriptMessageHandler 这个协议类专门用来处理JavaScript调用原生OC的方法
@@ -26,7 +15,7 @@
 @end
 
 @implementation WeakWebViewScriptMessageDelegate
-```
+
 - (instancetype)initWithDelegate:(id<WKScriptMessageHandler>)scriptDelegate {
     self = [super init];
     if (self) {
@@ -34,31 +23,25 @@
     }
     return self;
 }
-```
+
+
 #pragma mark - WKScriptMessageHandler
 //遵循WKScriptMessageHandler协议，必须实现如下方法，然后把方法向外传递
 //通过接收JS传出消息的name进行捕捉的回调方法
-```
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
     
     if ([self.scriptDelegate respondsToSelector:@selector(userContentController:didReceiveScriptMessage:)]) {
         [self.scriptDelegate userContentController:userContentController didReceiveScriptMessage:message];
     }
 }
+
+@end
+
 ```
-@end
 
 
 
-@interface TA_WKWebViewController ()<WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate>
 
-@property (nonatomic, strong) WKWebView *webView;
-
-@property (nonatomic, strong) UIButton *closeBtn;
-
-@end
-
-@implementation TA_WKWebViewController
 ```
 - (WKWebView *)webView{
     
