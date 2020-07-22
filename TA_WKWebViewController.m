@@ -1,17 +1,14 @@
 //
 //  TA_WKWebViewController.m
-//  TA_5youshenghuoApp
 //
-//  Created by 张家旗 on 2019/9/11.
-//  Copyright © 2019 com.tlkj. All rights reserved.
+//  Created by zhangjiaqi on 2019/9/11.
+//  Copyright © 2019 com.zjq. All rights reserved.
 //
 
 
 #import "TA_WKWebViewController.h"
-
+#import <WebKit/WebKit.h>
 #pragma mark ---  设置内存问题 --------
-
-
 // WKWebView 内存不释放的问题解决
 @interface WeakWebViewScriptMessageDelegate : NSObject<WKScriptMessageHandler>
 
@@ -45,7 +42,6 @@
 @end
 
 
-
 @interface TA_WKWebViewController ()<WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate>
 
 @property (nonatomic, strong) WKWebView *webView;
@@ -59,6 +55,7 @@
 - (WKWebView *)webView{
     
     if(_webView == nil){
+        
         //创建网页配置对象
         WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
         // 创建设置对象
@@ -74,7 +71,11 @@
         // 是使用h5的视频播放器在线播放, 还是使用原生播放器全屏播放
         config.allowsInlineMediaPlayback = YES;
         //设置视频是否需要用户手动播放  设置为NO则会允许自动播放
-        config.requiresUserActionForMediaPlayback = YES;
+        if (@available(iOS 10.0, *)) {
+            config.mediaTypesRequiringUserActionForPlayback = YES;
+        } else {
+            
+        }
         //设置是否允许画中画技术 在特定设备上有效
         config.allowsPictureInPictureMediaPlayback = YES;
         //设置请求的User-Agent信息中应用程序名称 iOS9后可用
@@ -93,7 +94,6 @@
         //以下代码适配文本大小
         NSString *jSString = @"var meta = document.createElement('meta'); meta.setAttribute('name', 'viewport'); meta.setAttribute('content', 'width=device-width,user-scalable=no, initial-scale=1'); document.getElementsByTagName('head')[0].appendChild(meta);";
         //用于进行JavaScript注入
-        
         WKUserScript *wkUScript = [[WKUserScript alloc] initWithSource:jSString injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
         [config.userContentController addUserScript:wkUScript];
         
@@ -104,15 +104,18 @@
         _webView.navigationDelegate = self;
         // 是否允许手势左滑返回上一级, 类似导航控制的左滑返回
         _webView.allowsBackForwardNavigationGestures = YES;
-        
-        NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:_urlStr]];
-        [_webView loadRequest:request];
-        
+        if (_urlStr.length >0) {
+            NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:_urlStr]];
+            [_webView loadRequest:request];
+        }else if (_HTMLString.length >0) {
+            [_webView loadHTMLString:_HTMLString baseURL:[NSURL URLWithString:BASEURLAPI]];
+        }
+        [_webView reload];
     }
-    
     return _webView;
 }
--(void)viewWillAppear:(BOOL)animated{
+
+- (void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:animated];
     
     [self.webView addObserver:self forKeyPath:@"title" options:NSKeyValueObservingOptionNew context:NULL];
@@ -125,43 +128,36 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
     if (_HaveNavHeaher==YES) {
         [self setupNav];
     }
-    
-    MJRefreshNormalHeader *header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
-        [_webView reload];
-        [_webView.scrollView.mj_header endRefreshing];
-    }];
-    self.webView.scrollView.mj_header = header;
-    
+    Weak__Self(weakSelf);
     [self.view addSubview:self.webView];
     [_webView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.right.mas_equalTo(self.view);
-        make.top.mas_equalTo(self.view.mas_top).offset(_HaveNavHeaher==YES? Iphone_X_layoutHeight:0);
-        make.bottom.mas_equalTo(self.view.mas_bottom).offset(IS_IPhoneX_UIScreen?-34:0);
+        make.top.mas_equalTo(self.view.mas_top).offset(weakSelf.HaveNavHeaher==YES? Iphone_X_layoutHeight:0);
+        make.bottom.mas_equalTo(self.view.mas_bottom).offset(IS_IPHONE_X_UIScreen?-34:0);
     }];
 }
 
-
 - (void)setupNav{
-    UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    backBtn.frame = CGRectMake(0, 0, 20, 40);
-    [backBtn setImage:[UIImage imageNamed:@"back"] forState:UIControlStateNormal];
-    backBtn.imageView.contentMode = UIViewContentModeScaleAspectFit;
-    [backBtn addTarget:self action:@selector(backClick) forControlEvents:UIControlEventTouchUpInside];
-    UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithCustomView:backBtn];
+    
+    [self.navigationView setTitle:_itemTitle];
+    Weak__Self(weakSelf);
+    [self.navigationView setNavigationBackButtonCallback:^(UIView *view) {
+        [weakSelf backClick];
+    }];
     
     _closeBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     [_closeBtn setTitle:@"关闭" forState:UIControlStateNormal];
-    [_closeBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [_closeBtn setTitleColor:WHiteColor_BRG forState:UIControlStateNormal];
     _closeBtn.titleLabel.font = [UIFont boldSystemFontOfSize:15];
     _closeBtn.frame = CGRectMake(0, 0, 40, 40);
     _closeBtn.hidden = YES;
-    [_closeBtn addTarget:self action:@selector(closeClick) forControlEvents:UIControlEventTouchUpInside];
-    UIBarButtonItem *closeItem = [[UIBarButtonItem alloc] initWithCustomView:_closeBtn];
-    
-    self.navigationItem.leftBarButtonItems = @[backItem,closeItem];
+    [self.navigationView addLeftView:_closeBtn clickCallback:^(UIView *view) {
+        [weakSelf closeClick];
+    }];
 }
 
 /**
@@ -190,6 +186,7 @@
     NSLog(@"name:%@\\\\n body:%@\\\\n frameInfo:%@\\\\n",message.name,message.body,message.frameInfo);
     //用message.body获得JS传出的参数体
     NSDictionary * parameter = message.body;
+    
     //JS调用OC
     if([message.name isEqualToString:@"jsToOcNoPrams"]){
         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"提示" message:parameter[@"params"] preferredStyle:UIAlertControllerStyleAlert];
@@ -198,12 +195,12 @@
         [self presentViewController:alertController animated:YES completion:nil];
         
     }else if([message.name isEqualToString:@"jsToOcWithPrams"]){
+        
         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"提示" message:parameter[@"params"] preferredStyle:UIAlertControllerStyleAlert];
         [alertController addAction:([UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         }])];
         [self presentViewController:alertController animated:YES completion:nil];
     }
-    
 }
 
 #pragma mark -- WKNavigationDelegate
@@ -212,14 +209,12 @@
  */
 // 页面开始加载时调用
 - (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation {
-    [self showHudTip];
-    
+    [MBProgressHUD showActivityMessageInWindow:nil timer:2];
 }
 
 // 页面加载失败时调用
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(null_unspecified WKNavigation *)navigation withError:(NSError *)error {
-    
-    [self dismissHudTip];
+    [MBProgressHUD showErrorMessage:@"加载失败"];
 }
 
 // 当内容开始返回时调用
@@ -229,17 +224,22 @@
 
 // 页面加载完成之后调用
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
-    [self dismissHudTip];
     
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [MBProgressHUD hideHUD];
+        });
+    });
 }
 
 //提交发生错误时调用
 - (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error {
     
-    [self dismissHudTip];
-    NSString *tipStr = [self tipFromError:error];
-    kTipAlert(tipStr);
-    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [MBProgressHUD hideHUD];
+        });
+    });
 }
 
 // 接收到服务器跳转请求即服务重定向时之后调用
@@ -250,19 +250,24 @@
 // 根据WebView对于即将跳转的HTTP请求头信息和相关信息来决定是否跳转
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     
-    
     if ([navigationAction.request.URL.scheme containsString:@"http"]){
         
         if ([navigationAction.request.URL.scheme containsString:@"https://apps.apple"]) {
             decisionHandler(WKNavigationActionPolicyCancel);
-            
         }else{
             decisionHandler(WKNavigationActionPolicyAllow);
         }
     }else{
         
         if([[UIApplication sharedApplication]canOpenURL:navigationAction.request.URL]){
-            [[UIApplication sharedApplication]openURL:navigationAction.request.URL];
+            if (@available(iOS 10.0, *)) {
+                [[UIApplication sharedApplication]openURL:navigationAction.request.URL options:@{} completionHandler:^(BOOL success) {
+                    
+                }];
+            } else {
+                [[UIApplication sharedApplication]openURL:navigationAction.request.URL];
+                
+            }
             decisionHandler(WKNavigationActionPolicyAllow);
             
         }else{
@@ -277,36 +282,23 @@
     NSString *scheme = navigationResponse.response.URL.absoluteString;
     
     if ([url.absoluteString hasPrefix:@"http"]) {
-        if([url.absoluteString containsString:@"#CMBBANK"] ){
-            NSURL *url = [NSURL URLWithString:@"cmbmobilebank://"];
-            
+        
+        if ([url.absoluteString containsString:@"https://apps.apple"]) {
             NSString *requestUrl = scheme;
-            
-            if (![[UIApplication sharedApplication] canOpenURL:url]) {
-                //未安装手机
-                NSString *strUrl = [requestUrl stringByReplacingOccurrencesOfString:@"#CMBBANK" withString:@""];
-                
-                NSLog(@"---未安装手机");
-                [_webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:strUrl]]];
-                decisionHandler(WKNavigationResponsePolicyAllow);
-            } else {
-                NSString *strUrl = [requestUrl stringByReplacingOccurrencesOfString:@"#CMBBANK" withString:@"&isapp=1"];
-                [_webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:strUrl]]];
-                NSLog(@"---已安装手机银行");
-                decisionHandler(WKNavigationResponsePolicyCancel);
-            }
-        }else{
-            if ([url.absoluteString containsString:@"https://apps.apple"]) {
-                NSString *requestUrl = scheme;
-                NSURL *url = [NSURL URLWithString:requestUrl];
-                //已安装手机银行
-                dispatch_async(dispatch_get_global_queue(0, 0), ^{
+            NSURL *url = [NSURL URLWithString:requestUrl];
+            //已安装手机银行
+            dispatch_async(dispatch_get_global_queue(0, 0), ^{
+                if (@available(iOS 10.0, *)) {
+                    [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:^(BOOL success) {
+                        
+                    }];
+                } else {
                     [[UIApplication sharedApplication] openURL:url];
-                });
-                decisionHandler(WKNavigationResponsePolicyCancel);
-            }else{
-                decisionHandler(WKNavigationResponsePolicyAllow);
-            }
+                }
+            });
+            decisionHandler(WKNavigationResponsePolicyCancel);
+        }else{
+            decisionHandler(WKNavigationResponsePolicyAllow);
         }
     }else{
         if ([scheme isEqualToString:@"tel"]) {
@@ -314,7 +306,12 @@
             NSString *callPhone = [NSString stringWithFormat:@"telprompt://%@", resourceSpecifier];
             /// 防止iOS 10及其之后，拨打电话系统弹出框延迟出现
             dispatch_async(dispatch_get_global_queue(0, 0), ^{
-                [[UIApplication sharedApplication] openURL:[NSURL URLWithString:callPhone]];
+                if (@available(iOS 10.0, *)) {
+                    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:callPhone] options:@{} completionHandler:^(BOOL success) {
+                        
+                    }];
+                } else {
+                    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:callPhone]];                }
             });
             decisionHandler(WKNavigationResponsePolicyCancel);
         }else{
@@ -325,31 +322,30 @@
             NSURL *url = [NSURL URLWithString:requestUrl];
             //已安装手机银行
             dispatch_async(dispatch_get_global_queue(0, 0), ^{
-                [[UIApplication sharedApplication] openURL:url];
+                if (@available(iOS 10.0, *)) {
+                    [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:^(BOOL success) {
+                        
+                    }];
+                } else {
+                    [[UIApplication sharedApplication] openURL:url];
+                    
+                }
             });
             decisionHandler(WKNavigationResponsePolicyCancel);
         }
     }
 }
 
-//需要响应身份验证时调用 同样在block中需要传入用户身份凭证
-- (void)webView:(WKWebView *)webView didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler{
-    
-    //用户身份信息
-    NSURLCredential * newCred = [[NSURLCredential alloc] initWithUser:@"user123" password:@"123" persistence:NSURLCredentialPersistenceNone];
-    //为 challenge 的发送方提供 credential
-    [challenge.sender useCredential:newCred forAuthenticationChallenge:challenge];
-    completionHandler(NSURLSessionAuthChallengeUseCredential,newCred);
-}
-
 //进程被终止时调用
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView{
-    
-    [self dismissHudTip];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [MBProgressHUD hideHUD];
+        });
+    });
 }
 
-#pragma mark -- WKUIDelegate
-
+#pragma mark --- WKUIDelegate ---
 /**
  *  web界面中有弹出警告框时调用
  *
@@ -364,8 +360,8 @@
     }])];
     [self presentViewController:alertController animated:YES completion:nil];
 }
-// 确认框
-//JavaScript调用confirm方法后回调的方法 confirm是js中的确定框，需要在block中把用户选择的情况传递进去
+
+// 确认框 JavaScript调用confirm方法后回调的方法 confirm是js中的确定框，需要在block中把用户选择的情况传递进去
 - (void)webView:(WKWebView *)webView runJavaScriptConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completionHandler{
     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"提示" message:message?:@"" preferredStyle:UIAlertControllerStyleAlert];
     [alertController addAction:([UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
@@ -376,6 +372,7 @@
     }])];
     [self presentViewController:alertController animated:YES completion:nil];
 }
+
 // 输入框
 //JavaScript调用prompt方法后回调的方法 prompt是js中的输入框 需要在block中把用户输入的信息传入
 - (void)webView:(WKWebView *)webView runJavaScriptTextInputPanelWithPrompt:(NSString *)prompt defaultText:(NSString *)defaultText initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(NSString * _Nullable))completionHandler{
@@ -388,6 +385,7 @@
     }])];
     [self presentViewController:alertController animated:YES completion:nil];
 }
+
 // 页面是弹出窗口 _blank 处理
 - (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures {
     if (!navigationAction.targetFrame.isMainFrame) {
@@ -395,7 +393,6 @@
     }
     return nil;
 }
-
 
 #pragma mark KVO的监听代理
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
@@ -415,6 +412,9 @@
 }
 
 @end
+
+
+
 
 
 
