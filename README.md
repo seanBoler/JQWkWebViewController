@@ -116,82 +116,14 @@
     
     return _webView;
 }
+
 ```
--(void)viewWillAppear:(BOOL)animated{
-    [super viewWillAppear:animated];
-    
-    [self.webView addObserver:self forKeyPath:@"title" options:NSKeyValueObservingOptionNew context:NULL];
-}
-
--(void)viewWillDisappear:(BOOL)animated{
-    
-    [self.webView removeObserver:self forKeyPath:@"title"];
-}
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    if (_HaveNavHeaher==YES) {
-        [self setupNav];
-    }
-    
-    MJRefreshNormalHeader *header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
-        [_webView reload];
-        [_webView.scrollView.mj_header endRefreshing];
-    }];
-    self.webView.scrollView.mj_header = header;
-    
-    [self.view addSubview:self.webView];
-    [_webView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.right.mas_equalTo(self.view);
-        make.top.mas_equalTo(self.view.mas_top).offset(_HaveNavHeaher==YES? Iphone_X_layoutHeight:0);
-        make.bottom.mas_equalTo(self.view.mas_bottom).offset(IS_IPhoneX_UIScreen?-34:0);
-    }];
-}
-
-
-- (void)setupNav{
-    UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    backBtn.frame = CGRectMake(0, 0, 20, 40);
-    [backBtn setImage:[UIImage imageNamed:@"back"] forState:UIControlStateNormal];
-    backBtn.imageView.contentMode = UIViewContentModeScaleAspectFit;
-    [backBtn addTarget:self action:@selector(backClick) forControlEvents:UIControlEventTouchUpInside];
-    UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithCustomView:backBtn];
-    
-    _closeBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    [_closeBtn setTitle:@"关闭" forState:UIControlStateNormal];
-    [_closeBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    _closeBtn.titleLabel.font = [UIFont boldSystemFontOfSize:15];
-    _closeBtn.frame = CGRectMake(0, 0, 40, 40);
-    _closeBtn.hidden = YES;
-    [_closeBtn addTarget:self action:@selector(closeClick) forControlEvents:UIControlEventTouchUpInside];
-    UIBarButtonItem *closeItem = [[UIBarButtonItem alloc] initWithCustomView:_closeBtn];
-    
-    self.navigationItem.leftBarButtonItems = @[backItem,closeItem];
-}
-
-/**
- *  后退
- */
-- (void)backClick{
-    
-    if([_webView canGoBack]){
-        [_webView goBack];
-        _closeBtn.hidden = NO;
-    }else{
-        [self closeClick];
-    }
-}
-
-- (void)closeClick{
-    if(self.backBlock){
-        self.backBlock();
-    }
-    [self.navigationController popViewControllerAnimated:YES];
-}
 
 //被自定义的WKScriptMessageHandler在回调方法里通过代理回调回来，绕了一圈就是为了解决内存不释放的问题
 //通过接收JS传出消息的name进行捕捉的回调方法
+
 ```
+
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message{
     NSLog(@"name:%@\\\\n body:%@\\\\n frameInfo:%@\\\\n",message.name,message.body,message.frameInfo);
     //用message.body获得JS传出的参数体
@@ -211,13 +143,16 @@
     }
     
 }
+
 ```
+
 #pragma mark -- WKNavigationDelegate
 /*
  WKNavigationDelegate主要处理一些跳转、加载处理操作，WKUIDelegate主要处理JS脚本，确认框，警告框等
  */
 // 页面开始加载时调用
-````
+
+```
 - (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation {
     [self showHudTip];
     
@@ -258,6 +193,7 @@
 
 // 根据WebView对于即将跳转的HTTP请求头信息和相关信息来决定是否跳转
 
+
 ```
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     
@@ -282,9 +218,11 @@
     }
 }
 
+
 ```
 
 // 根据客户端受到的服务器响应头以及response相关信息来决定是否可以跳转
+
 
 ```
 
@@ -348,24 +286,9 @@
     }
 }
 
+
 ```
 
-
-//需要响应身份验证时调用 同样在block中需要传入用户身份凭证
-- (void)webView:(WKWebView *)webView didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler{
-    
-    //用户身份信息
-    NSURLCredential * newCred = [[NSURLCredential alloc] initWithUser:@"user123" password:@"123" persistence:NSURLCredentialPersistenceNone];
-    //为 challenge 的发送方提供 credential
-    [challenge.sender useCredential:newCred forAuthenticationChallenge:challenge];
-    completionHandler(NSURLSessionAuthChallengeUseCredential,newCred);
-}
-
-//进程被终止时调用
-- (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView{
-    
-    [self dismissHudTip];
-}
 
 #pragma mark -- WKUIDelegate
 
@@ -429,8 +352,12 @@
 ```
 
 
-```
+
+
 #pragma mark KVO的监听代理
+
+```
+
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
     
     //网页title
@@ -446,7 +373,9 @@
         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
     }
 }
+
 ```
+
 @end
 
 
